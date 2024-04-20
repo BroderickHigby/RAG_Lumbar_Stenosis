@@ -16,7 +16,17 @@ def load_data(paths):
     texts = [extract_text_from_pdf(path) for path in paths]
     return {'text': texts}
 
-# Main function
+# For loading in data 
+def sliding_window_text(text, max_length, stride):
+    tokens = tokenizer.tokenize(text)
+    token_lists = [tokens[i:i+max_length] for i in range(0, len(tokens), stride)]
+    return [" ".join(token_list) for token_list in token_lists]
+
+# Example usage
+stride = 256  # Overlap to maintain context
+windows = sliding_window_text(file_text, max_length, stride)
+max_length = 512 
+
 def main():
     # PDF paths
     pdf_paths = ['document1.pdf', 'document2.pdf', 'document3.pdf']
@@ -61,7 +71,7 @@ def main():
     model.save_pretrained('./rag_model_final')
 
     # Run inference
-    input_ids = tokenizer("What is the capital of France?", return_tensors="pt").input_ids
+    input_ids = [tokenizer.encode(chunk, add_special_tokens=True, max_length=max_length, truncation=True) for chunk in chunks]
     output_ids = model.generate(input_ids, num_beams=5)
     print("Generated:", tokenizer.decode(output_ids[0], skip_special_tokens=True))
 
